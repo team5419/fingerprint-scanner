@@ -43,8 +43,8 @@ def loguser(session, key):
 with requests.Session() as session:
     login(
         session=session,
-        email="felix@tacocat.com",#input("Enter email: "),
-        password="felixmo2006894"#getpass.getpass()
+        email=input("Enter email: "),
+        password=getpass.getpass()
     )
 
     loguser(session, 2)
