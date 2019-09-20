@@ -1,5 +1,6 @@
 import requests
 import getpass
+import pyfingerprint
 
 def login(session, email, password):
     res = session.post(
@@ -41,12 +42,50 @@ def loguser(session, key):
     return res
 
 with requests.Session() as session:
+    try:
+        sensor = pyfingerprint.PyFingerprint(
+            '/dev/ttyUSB0',
+            57600,
+            0xFFFFFFFF,
+            0x00000000
+        )
+
+        if sensor.verifyPassword() == False:
+            raise ValueError('The given fingerprint sensor password is wrong!')
+
+    except Exception as e:
+        print('The fingerprint sensor could not be initialized!')
+        print('Exception message: ' + str(e))
+        exit(1)
+
     login(
         session=session,
         email=input("Enter email: "),
         password=getpass.getpass()
     )
 
-    loguser(session, 2)
+    print('Currently used templates: ' + str(sensor.getTemplateCount()) +'/'+ str(sensor.getStorageCapacity()))
 
-    logout(session) #logout dosent work
+    try:
+        while True:
+            while sensor.readImage() == False:
+                pass
+
+            sensor.convertImage(0x01)
+            result = sensor.searchTemplate()
+
+            pyfingerprint()
+
+            userID = result[0]
+            accuracy = result[1]
+
+            if userID == -1:
+                print(f"No match found!")
+            else:
+                print(f"Loged user with id {userID}, accuracy {accuracy}.")
+                loguser(session, userID)
+            
+    except KeyboardInterrupt:
+        print("123")
+    finally:
+        logout(session) #logout dosent work
